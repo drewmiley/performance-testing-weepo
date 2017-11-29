@@ -43,12 +43,21 @@ class Login extends Simulation {
       .post("ipostsaas-order-composite-service/envelope")
         .formParam("username", "kitabird@gmail.com")
         .header("Content-Type", "application/json"))
+		//store envelopeId
     // .header("Authorization", "Bearer " + authToken)
 /*      .exec(http("Upload document")
       .post("ipostsaas-order-composite-service/envelope/" + envelopeId + "/document")
-      .formParam("myKey", "myValue")
+      .formParam("file", "standardletter.pdf")
       .formUpload("file", "standardletter.pdf")
       .formUpload("file", "standardletter.pdf"))*/
+		//store documentId
+/*		.exec(http("Get price)
+			.get("ipostsaas-order-composite-service/envelope/" + envelopeId + "/price/coversheet")
+			.exec(http("Address scan")
+			.get("ipostsaas-order-composite-service/envelope/" + envelopeId + "/document/" + documentId)
+			.exec(http("Get price)
+			.get("ipostsaas-order-composite-service/envelope/" + envelopeId + "/price/coversheet")
+ */
   }
 
   val user = scenario("User").exec(Login.login, Upload.upload)
