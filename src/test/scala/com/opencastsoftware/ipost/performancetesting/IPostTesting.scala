@@ -24,7 +24,7 @@ class IPostTesting extends Simulation {
 		.formParam("client_id", "ipost")
 		.check(jsonPath("$.access_token").saveAs("accessToken")))
 
-	val upload = login.exec(http("Create envelope")
+	val createAndUpload = exec(http("Create envelope")
 		.post("ipostsaas-order-composite-service/envelope")
 		.body(StringBody("""{"username":"kitabird@gmail.com"}"""))
 		.header("Content-Type", "application/json")
@@ -34,13 +34,31 @@ class IPostTesting extends Simulation {
 			.post("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document")
 			.formParam("file", "standardletter.pdf")
 			.formUpload("file", "standardletter.pdf"))
-		//store documentId
-//			.exec(http("Address scan")
-//			.get("ipostsaas-order-composite-service/envelope/" + envelopeId + "/document/" + documentId)
-//			.exec(http("Get price)
-//			.get("ipostsaas-order-composite-service/envelope/" + envelopeId + "/price/coversheet")
 
-  val user = scenario("User").exec(login, upload)
+	val getEnvelope = exec(http("Get Envelope")
+		.get("ipostsaas-order-composite-service/envelope/" + "${envelopeId}")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}")
+  	.check(jsonPath("$").saveAs("envelope")))
+
+	val getDocumentId = exec(http("Get Document Id")
+		.get("ipostsaas-order-composite-service/envelope/" + "${envelopeId}")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}")
+		.check(jsonPath("$.documents[0].id").saveAs("documentId")))
+
+	val addressScan = exec(http("Scan for address")
+		.get("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document/" + "${documentId}")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}"))
+
+	val getPrice = exec(http("Get price")
+		.get("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/price/coversheet")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}"))
+
+
+  val user = scenario("User").exec(login, createAndUpload, getDocumentId, addressScan)
 //	The line below is for testing out newly written scenarios
 	setUp(user.inject(atOnceUsers(1))).protocols(httpProtocol)
 //	The line below is for full performance testing purposes
