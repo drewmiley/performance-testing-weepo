@@ -40,7 +40,12 @@ class Login extends Simulation {
 				.body(StringBody("""{"username":"kitabird@gmail.com"}"""))
 				.header("Content-Type", "application/json")
 				.header("Authorization", "Bearer " + "${accessToken}")
+				.check(bodyString.saveAs("envelopeId"))
       )
+			.exec(http("Upload document")
+				.post("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document")
+				.formParam("file", "standardletter.pdf")
+				.formUpload("file", "standardletter.pdf"))
   }
 
   object Upload {
