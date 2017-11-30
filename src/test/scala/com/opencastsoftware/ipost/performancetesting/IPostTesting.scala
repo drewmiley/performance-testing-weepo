@@ -57,8 +57,13 @@ class IPostTesting extends Simulation {
 		.header("Content-Type", "application/json")
 		.header("Authorization", "Bearer " + "${accessToken}"))
 
+  val addRate = exec(http("Add rate")
+    .patch("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/rate/ECONOMY")
+    .header("Content-Type", "application/json")
+    .header("Authorization", "Bearer " + "${accessToken}"))
 
-  val user = scenario("User").exec(login, createAndUpload, getDocumentId, addressScan)
+
+  val user = scenario("User").exec(login, createAndUpload, getDocumentId, addressScan, addRate, getPrice)
 //	The line below is for testing out newly written scenarios
 	setUp(user.inject(atOnceUsers(1))).protocols(httpProtocol)
 //	The line below is for full performance testing purposes
