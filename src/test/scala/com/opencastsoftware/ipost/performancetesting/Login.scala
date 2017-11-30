@@ -34,7 +34,12 @@ class Login extends Simulation {
       .formParam("password", "Password1")
       .formParam("grant_type", "password")
       .formParam("client_id", "ipost")
-      // store auth token
+			.check(jsonPath("$.access_token").saveAs("accessToken")))
+			.exec(http("Create envelope")
+				.post("ipostsaas-order-composite-service/envelope")
+				.body(StringBody("""{"username":"kitabird@gmail.com"}"""))
+				.header("Content-Type", "application/json")
+				.header("Authorization", "Bearer " + "${accessToken}")
       )
   }
 
@@ -42,9 +47,13 @@ class Login extends Simulation {
     val upload = exec(http("Create envelope")
       .post("ipostsaas-order-composite-service/envelope")
         .formParam("username", "kitabird@gmail.com")
-        .header("Content-Type", "application/json"))
+        .header("Content-Type", "application/json")
+			  .header("Authorization", "Bearer ${accessToken}")
+//		  	.check(
+//					headerRegex("LOCATION", )
+				)
 		//store envelopeId
-    // .header("Authorization", "Bearer " + authToken)
+
 /*      .exec(http("Upload document")
       .post("ipostsaas-order-composite-service/envelope/" + envelopeId + "/document")
       .formParam("file", "standardletter.pdf")
@@ -60,7 +69,7 @@ class Login extends Simulation {
  */
   }
 
-  val user = scenario("User").exec(Login.login, Upload.upload)
+  val user = scenario("User").exec(Login.login)
 	setUp(user.inject(atOnceUsers(1))).protocols(httpProtocol)
   //setUp(user.inject(rampUsers(50) over (20 seconds))).protocols(httpProtocol)
 }
