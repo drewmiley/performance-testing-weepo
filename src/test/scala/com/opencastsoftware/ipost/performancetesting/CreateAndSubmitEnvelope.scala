@@ -6,7 +6,7 @@ import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 import io.gatling.jdbc.Predef._
 
-class IPostTesting extends Simulation {
+class CreateAndSubmitEnvelope extends Simulation {
 
 	val httpProtocol = http
 		.baseURL("https://app.ipostsoftware.com:8080/")
@@ -24,16 +24,17 @@ class IPostTesting extends Simulation {
 		.formParam("client_id", "ipost")
 		.check(jsonPath("$.access_token").saveAs("accessToken")))
 
-	val createAndUpload = exec(http("Create envelope")
+	val createEnvelope = exec(http("Create envelope")
 		.post("ipostsaas-order-composite-service/envelope")
 		.body(StringBody("""{"username":"kitabird@gmail.com"}"""))
 		.header("Content-Type", "application/json")
 		.header("Authorization", "Bearer " + "${accessToken}")
 		.check(bodyString.saveAs("envelopeId")))
-			.exec(http("Upload document")
-			.post("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document")
-			.formParam("file", "standardletter.pdf")
-			.formUpload("file", "standardletter.pdf"))
+
+	val uploadDocument = exec(http("Upload document")
+		.post("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document")
+		.formParam("file", "standardletter.pdf")
+		.formUpload("file", "standardletter.pdf"))
 
 	val getEnvelope = exec(http("Get Envelope")
 		.get("ipostsaas-order-composite-service/envelope/" + "${envelopeId}")
@@ -79,7 +80,9 @@ class IPostTesting extends Simulation {
     .header("Content-Type", "application/json")
     .header("Authorization", "Bearer " + "${accessToken}"))
 
-  val user = scenario("User").exec(login, createAndUpload, getDocumentId, addressScan, addRate, addRecipientAddress, addReturnAddress, getPrice, sendEnvelope)
+	//TODO upload another document, reorder documents, alter simplex/duplex, delete document
+
+  val user = scenario("User").exec(login, createEnvelope, uploadDocument, getDocumentId, addressScan, addRate, addRecipientAddress, addReturnAddress, getPrice, sendEnvelope)
 //	The line below is for testing out newly written scenarios
 	setUp(user.inject(atOnceUsers(1))).protocols(httpProtocol)
 //	The line below is for full performance testing purposes
