@@ -62,8 +62,24 @@ class IPostTesting extends Simulation {
     .header("Content-Type", "application/json")
     .header("Authorization", "Bearer " + "${accessToken}"))
 
+  val addRecipientAddress = exec(http("Add recipient address")
+    .put("ipostsaas-order-composite-service/envelope/" + "${envelopeId}")
+    .body(StringBody("""{"recipientAddress":{"addressLine1":"Walker Road", "postTown": "Newcastle Upon Tyne", "postcode": "NE6 2HL"}}"""))
+    .header("Content-Type", "application/json")
+    .header("Authorization", "Bearer " + "${accessToken}"))
 
-  val user = scenario("User").exec(login, createAndUpload, getDocumentId, addressScan, addRate, getPrice)
+  val addReturnAddress = exec(http("Add return address")
+    .put("ipostsaas-order-composite-service/envelope/" + "${envelopeId}")
+    .body(StringBody("""{"returnAddress":{"addressLine1":"Walker Road", "postTown": "Newcastle Upon Tyne", "postcode": "NE6 2HL"}}"""))
+    .header("Content-Type", "application/json")
+    .header("Authorization", "Bearer " + "${accessToken}"))
+
+  val sendEnvelope = exec(http("Send envelope")
+    .put("ipostsaas-order-composite-service/envelope/send/" + "${envelopeId}" + "/submit")
+    .header("Content-Type", "application/json")
+    .header("Authorization", "Bearer " + "${accessToken}"))
+
+  val user = scenario("User").exec(login, createAndUpload, getDocumentId, addressScan, addRate, addRecipientAddress, addReturnAddress, getPrice, sendEnvelope)
 //	The line below is for testing out newly written scenarios
 	setUp(user.inject(atOnceUsers(1))).protocols(httpProtocol)
 //	The line below is for full performance testing purposes
