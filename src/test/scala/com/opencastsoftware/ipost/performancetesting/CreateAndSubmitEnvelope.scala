@@ -48,6 +48,12 @@ class CreateAndSubmitEnvelope extends Simulation {
 		.header("Authorization", "Bearer " + "${accessToken}")
 		.check(jsonPath("$.documents[0].id").saveAs("documentId")))
 
+	val getDocumentId2 = exec(http("Get Second Document Id")
+		.get("ipostsaas-order-composite-service/envelope/" + "${envelopeId}")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}")
+		.check(jsonPath("$.documents[1].id").saveAs("documentId2")))
+
 	val addressScan = exec(http("Scan for address")
 		.get("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document/" + "${documentId}")
 		.header("Content-Type", "application/json")
@@ -80,9 +86,24 @@ class CreateAndSubmitEnvelope extends Simulation {
     .header("Content-Type", "application/json")
     .header("Authorization", "Bearer " + "${accessToken}"))
 
-	//TODO upload another document, reorder documents, alter simplex/duplex, delete document
+	val setToDoubleSided = exec(http("Set to double sided")
+  	.patch("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document/" + "${documentId}" + "/doublesided/true")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}"))
 
-  val user = scenario("User").exec(login, createEnvelope, uploadDocument, getDocumentId, addressScan, addRate, addRecipientAddress, addReturnAddress, getPrice, sendEnvelope)
+	val reorderDocuments = exec(http("Reorder documents")
+  	.patch("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "?documentid=" + "${documentId}" + "&documentid=" + "${documentId2}"
+			+ "&order=2&order=1")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}"))
+
+	val deleteDocument = exec(http("Delete document")
+  	.delete("ipostsaas-order-composite-service/envelope/" + "${envelopeId}" + "/document/" + "${documentId}")
+		.header("Content-Type", "application/json")
+		.header("Authorization", "Bearer " + "${accessToken}"))
+
+  val user = scenario("User").exec(login, createEnvelope, uploadDocument, getDocumentId, addressScan, setToDoubleSided,
+		addRate, addRecipientAddress, addReturnAddress, getPrice, uploadDocument, getDocumentId2, reorderDocuments, deleteDocument, sendEnvelope)
 //	The line below is for testing out newly written scenarios
 	setUp(user.inject(atOnceUsers(1))).protocols(httpProtocol)
 //	The line below is for full performance testing purposes
